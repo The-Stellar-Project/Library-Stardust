@@ -7,6 +7,7 @@ using Karma.MediaCore;
 namespace Stardust.Client.Render;
 
 public unsafe class RenderContext : IDisposable {
+    private WGPU.Instance _instance;
     private WGPU.Adapter _adapter;
     public WGPU.Device _device;
     private WGPU.SupportedLimits _adapterLimits;
@@ -16,11 +17,22 @@ public unsafe class RenderContext : IDisposable {
     public WGPU.Surface Surface { get; private set; }
     public WGPU.SwapChain SwapChain { get; private set; }
 
+    [UnmanagedCallersOnly]
+    private static void UncapturedErrorCallback(WGPU.ErrorType errorType, CString error, void* p1) {
+        Console.WriteLine(Marshal.PtrToStringAnsi(error));
+    }
+    
     public RenderContext(Window window) {
+        Console.WriteLine("Creating render context...");
+
+        _instance = WGPU.CreateInstance(null);
+        
         CreateSurface(window);
         CreateAdapter();
         CreateDevice();
         CreateSwapChain(window);
+
+        WGPU.DeviceSetUncapturedErrorCallback(_device, &UncapturedErrorCallback, null);
     }
 
     private void CreateSurface(Window window) {
@@ -34,7 +46,7 @@ public unsafe class RenderContext : IDisposable {
             windowsSurfaceDescriptor.Hwnd = data.Window;
             surfaceDescriptor.NextInChain = (WGPU.ChainedStruct*) &windowsSurfaceDescriptor;
 
-            Surface = WGPU.InstanceCreateSurface(WGPU.Instance.Zero, &surfaceDescriptor);
+            Surface = WGPU.InstanceCreateSurface(_instance, &surfaceDescriptor);
         }
         else if (SystemInfo.IsMacOS) {
             var view = SDL.CreateMetalView(window.Handle);
@@ -50,7 +62,7 @@ public unsafe class RenderContext : IDisposable {
             metalSurfaceDescriptor.Layer = layer;
             surfaceDescriptor.NextInChain = (WGPU.ChainedStruct*) &metalSurfaceDescriptor;
 
-            Surface = WGPU.InstanceCreateSurface(WGPU.Instance.Zero, &surfaceDescriptor);
+            Surface = WGPU.InstanceCreateSurface(_instance, &surfaceDescriptor);
         }
         else {
             if (window.WmInfo.Type == SDL.SysWmType.Wayland) {
@@ -62,7 +74,7 @@ public unsafe class RenderContext : IDisposable {
                 waylandSurfaceDescriptor.Surface = data.Surface;
                 surfaceDescriptor.NextInChain = (WGPU.ChainedStruct*) &waylandSurfaceDescriptor;
 
-                Surface = WGPU.InstanceCreateSurface(WGPU.Instance.Zero, &surfaceDescriptor);
+                Surface = WGPU.InstanceCreateSurface(_instance, &surfaceDescriptor);
             }
             else {
                 var data = window.WmInfo.Data.X11;
@@ -73,7 +85,7 @@ public unsafe class RenderContext : IDisposable {
                 xSurfaceDescriptor.Window = data.Window;
                 surfaceDescriptor.NextInChain = (WGPU.ChainedStruct*) &xSurfaceDescriptor;
 
-                Surface = WGPU.InstanceCreateSurface(WGPU.Instance.Zero, &surfaceDescriptor);
+                Surface = WGPU.InstanceCreateSurface(_instance, &surfaceDescriptor);
             }
         }
 
@@ -102,6 +114,7 @@ public unsafe class RenderContext : IDisposable {
     
     [UnmanagedCallersOnly]
     private static void RequestAdapterCallback(WGPU.RequestAdapterStatus status, WGPU.Adapter adapter, CString message, void* userdata) {
+        Console.WriteLine(Marshal.PtrToStringAnsi(message));
         *(WGPU.Adapter*) userdata = adapter;
     }
 
@@ -114,10 +127,10 @@ public unsafe class RenderContext : IDisposable {
         fixed (WGPU.Adapter* adapter = &_adapter) {
             WGPU.RequestAdapterOptions requestAdapterOptions;
             requestAdapterOptions.CompatibleSurface = Surface;
-            requestAdapterOptions.PowerPreference = WGPU.PowerPreference.HighPerformance;
+            requestAdapterOptions.PowerPreference = WGPU.PowerPreference.Undefined;
             requestAdapterOptions.ForceFallbackAdapter = false;
 
-            WGPU.InstanceRequestAdapter(WGPU.Instance.Zero, &requestAdapterOptions, &RequestAdapterCallback, adapter);
+            WGPU.InstanceRequestAdapter(_instance, &requestAdapterOptions, &RequestAdapterCallback, adapter);
         }
 
         if (_adapter == WGPU.Adapter.Zero) {

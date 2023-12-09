@@ -1,13 +1,21 @@
 using Karma.CoreGPU;
 using Karma.CoreInvoke;
+using Stardust.Client.Render.Util;
 
 namespace Stardust.Client.Render; 
 
 public unsafe class Renderer {
     private readonly RenderContext _context;
+    private WGPU.RenderPipeline _renderPipeline;
     
     public Renderer(RenderContext context) {
         _context = context;
+
+        _renderPipeline = new PipelineBuilder(_context.Device)
+            .VertexShader("triangle.wgsl", "vs_main")
+            .FragmentShader("triangle.wgsl", "fs_main")
+            .MultisampleState(1, 0xffffffff)
+            .Build();
     }
 
     public void Render() {
@@ -37,6 +45,7 @@ public unsafe class Renderer {
         renderPassDescriptor.ColorAttachments = &attachment;
 
         var renderEncoder = WGPU.CommandEncoderBeginRenderPass(commandEncoder, &renderPassDescriptor);
+        WGPU.RenderPassEncoderSetPipeline(renderEncoder, _renderPipeline);
         WGPU.RenderPassEncoderEndPass(renderEncoder);
 
         WGPU.CommandBufferDescriptor commandBufferDescriptor;
