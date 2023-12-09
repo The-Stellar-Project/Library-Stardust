@@ -1,0 +1,9 @@
+Api/
+Client/
+Server/
+
+.formatter.xml
+buildandrun.sh
+Library-Stardust.csproj
+Library-Stardust.sln
+Stardust.cs
