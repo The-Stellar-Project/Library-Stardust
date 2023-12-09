@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>Library_Stardust</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Folder Include="Api\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Karma.CoreGPU" Version="1.4.12" />
+    </ItemGroup>
+
+</Project>
