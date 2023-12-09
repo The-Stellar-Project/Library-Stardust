@@ -50,19 +50,22 @@ namespace Stardust.Client {
 
 		public void Dispose() => SDL.DestroyWindow(this.Handle);
 
-		internal void Run() {
+		internal void Run(Action function) {
 			SDL.Event e;
 			bool      running = true;
 
-			while (running)
-			while (SDL.PollEvent(&e) != 0)
-				switch (e.Type) {
-					case SDL.EventType.Quit: {
-						if (e.Quit.Type == SDL.EventType.Quit) running = false;
+			while (running) {
+				while (SDL.PollEvent(&e) != 0)
+					switch (e.Type) {
+						case SDL.EventType.Quit: {
+							if (e.Quit.Type == SDL.EventType.Quit) running = false;
 
-						break;
+							break;
+						}
 					}
-				}
+
+				function();
+			}
 		}
 
 		#region Properties

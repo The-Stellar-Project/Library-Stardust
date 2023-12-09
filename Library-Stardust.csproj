@@ -17,12 +17,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Folder Include="Api\"/>
+        <Folder Include="Api\" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Karma.CoreGPU" Version="1.4.12"/>
-        <PackageReference Include="Karma.MediaCore" Version="1.4.5"/>
+        <PackageReference Include="Karma.CoreGPU" Version="1.4.12" />
+        <PackageReference Include="Karma.MediaCore" Version="1.4.5" />
     </ItemGroup>
 
 </Project>

@@ -14,11 +14,15 @@ namespace Stardust.Client {
 									fullScreen: false,
 									allowHighDpi: false);
 			var renderContext = new RenderContext(window);
+			var renderer = new Renderer(renderContext);
 
-			window.Run();
+			window.Run(() => {
+				renderer.Render();
+			});
 
-			while (Running) ;
+			//while (Running) ;
 			// render context dispose here :D
+			renderContext.Dispose();
 			window.Dispose();
 		}
 	}

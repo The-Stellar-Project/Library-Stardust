@@ -6,12 +6,12 @@ using Karma.MediaCore;
 
 namespace Stardust.Client.Render;
 
-public unsafe class RenderContext {
+public unsafe class RenderContext : IDisposable {
     private WGPU.Adapter _adapter;
-    private WGPU.Device _device;
+    public WGPU.Device _device;
     private WGPU.SupportedLimits _adapterLimits;
     private WGPU.AdapterProperties _adapterProperties;
-
+    public WGPU.Device Device => _device;
     public WGPU.Queue DeviceQueue { get; private set; }
     public WGPU.Surface Surface { get; private set; }
     public WGPU.SwapChain SwapChain { get; private set; }
@@ -20,6 +20,7 @@ public unsafe class RenderContext {
         CreateSurface(window);
         CreateAdapter();
         CreateDevice();
+        CreateSwapChain(window);
     }
 
     private void CreateSurface(Window window) {
@@ -159,5 +160,11 @@ public unsafe class RenderContext {
     private void PrintAdapterInfo() {
         var limits = _adapterLimits.Limits;
         Console.WriteLine($"Device Name: {_adapterProperties.Name.ToString()}, Backend: {_adapterProperties.BackendType}");
+    }
+
+    public void Dispose() {
+        WGPU.DevicePoll(_device, true);
+
+        WGPU.DeviceDrop(_device);
     }
 }
