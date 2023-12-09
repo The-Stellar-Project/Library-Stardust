@@ -1,4 +1,8 @@
+# folders
 .git/
 .idea/
 bin/
 obj/
+
+# files
+.DS_Store
