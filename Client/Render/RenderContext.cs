@@ -1,7 +1,3 @@
-namespace Stardust.Client.Render; 
-
-public class RenderContext {
-    public RenderContext() {
-        
-    }
+namespace Stardust.Client.Render {
+	public class RenderContext { }
 }

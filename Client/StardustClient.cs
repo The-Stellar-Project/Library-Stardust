@@ -4,7 +4,11 @@ namespace Stardust.Client {
 			Console.WriteLine(value: "client detected");
 			foreach (var pair in args) Console.WriteLine(value: $"key: {pair.Key} ; value: {pair.Value}");
 
-			var window = new Window("Stardust Example", 1600, 900, false, false);
+			var window = new Window(title: "Stardust Example",
+									width: 1600,
+									height: 900,
+									fullScreen: false,
+									allowHighDpi: false);
 			window.Run();
 		}
 	}

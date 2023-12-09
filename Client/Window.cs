@@ -1,158 +1,158 @@
 using System.Runtime.CompilerServices;
 using System.Text;
+
 using Karma.CoreInvoke;
 using Karma.Kommons.Utils;
 using Karma.MediaCore;
 
-namespace Stardust.Client; 
+namespace Stardust.Client {
+	public sealed unsafe class Window : IDisposable {
+		private bool _isFullScreen;
 
-public sealed unsafe class Window : IDisposable {
-    private readonly SDL.Window _handle;
-    private bool _isFullScreen;
+		private SDL.WmInfo _wmInfo;
 
-    private SDL.WmInfo _wmInfo;
+		public Window(string title, uint width, uint height, bool fullScreen, bool allowHighDpi) {
+			this._isFullScreen = fullScreen;
 
-    public Window(string title, uint width, uint height, bool fullScreen, bool allowHighDpi) {
-        _isFullScreen = fullScreen;
+			var flags = SDL.WindowFlag.Shown;
 
-        var flags = SDL.WindowFlag.Shown;
+			/*
+			 * Avoid weird fullscreen fuckery on *nix based OSs
+			 * running X11 or Wayland, because it's completely
+			 * broken within SDL2..
+			 */
+			if (fullScreen)
+				flags |= SystemInfo.IsUnixoid ?
+							 SDL.WindowFlag.FullscreenDesktop :
+							 SDL.WindowFlag.Fullscreen;
+			else flags |= SDL.WindowFlag.Resizable;
 
-        // Avoid weird fullscreen fuckery on *nix based OSs
-        // running X11 or Wayland, because it's completely
-        // broken within SDL2..
-        if (fullScreen) {
-            flags |= SystemInfo.IsUnixoid 
-                ? SDL.WindowFlag.FullscreenDesktop
-                : SDL.WindowFlag.Fullscreen;
-        }
-        else {
-            flags |= SDL.WindowFlag.Resizable;
-        }
+			if (allowHighDpi) flags       |= SDL.WindowFlag.AllowHighDpi;
+			if (SystemInfo.IsMacOS) flags |= SDL.WindowFlag.Metal;
 
-        if (allowHighDpi) flags |= SDL.WindowFlag.AllowHighDpi;
-        if (SystemInfo.IsMacOS) flags |= SDL.WindowFlag.Metal;
+			fixed (byte* titlePtr = Encoding.UTF8.GetBytes(s: title))
+				this.Handle = SDL.CreateWindow((CString)titlePtr,
+											   (int)SDL.WindowPosCenter,
+											   (int)SDL.WindowPosCenter,
+											   (int)width,
+											   (int)height,
+											   flags);
 
-        fixed (byte* titlePtr = Encoding.UTF8.GetBytes(title)) {
-            _handle = SDL.CreateWindow((CString) titlePtr, (int) SDL.WindowPosCenter, (int) SDL.WindowPosCenter, (int) width, (int) height, flags);
-        }
+			if (this.Handle == SDL.Window.Zero) SDL.ThrowCurrentError();
 
-        if (_handle == SDL.Window.Zero) SDL.ThrowCurrentError();
+			fixed (SDL.WmInfo* info = &this._wmInfo) {
+				SDL.GetVersion(&info->Version);
+				SDL.Validate(result: SDL.GetWindowWmInfo(this.Handle, info));
+			}
 
-        fixed (SDL.WmInfo* info = &_wmInfo) {
-            SDL.GetVersion(&info->Version);
-            SDL.Validate(SDL.GetWindowWmInfo(_handle, info));
-        }
+			if (this.WmInfo.Type == SDL.SysWmType.Unknown) throw new Exception(message: "Unknown SysWm Type");
+		}
 
-        if (WmInfo.Type == SDL.SysWmType.Unknown) {
-            throw new Exception("Unknown SysWm Type");
-        }
-    }
+		public void Dispose() => SDL.DestroyWindow(this.Handle);
 
-    public void Dispose() {
-        SDL.DestroyWindow(_handle);
-    }
+		internal void Run() {
+			SDL.Event e;
+			bool      running = true;
 
-    internal void Run() {
-        SDL.Event e;
-        var running = true;
-        
-        while (running) {
-            while (SDL.PollEvent(&e) != 0) {
-                switch (e.Type) {
-                    case SDL.EventType.Quit: {
-                        if (e.Quit.Type == SDL.EventType.Quit) {
-                            running = false;
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    }
+			while (running)
+			while (SDL.PollEvent(&e) != 0)
+				switch (e.Type) {
+					case SDL.EventType.Quit: {
+						if (e.Quit.Type == SDL.EventType.Quit) running = false;
 
-    #region Properties
+						break;
+					}
+				}
+		}
 
-    public bool IsFullScreen {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _isFullScreen;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set {
-            if (_isFullScreen == value) return;
-            SDL.SetWindowFullscreen(_handle, value ? (uint) (SystemInfo.IsUnixoid ? SDL.WindowFlag.FullscreenDesktop : SDL.WindowFlag.Fullscreen) : 0U);
-            _isFullScreen = value;
-        }
-    }
+		#region Properties
+		public bool IsFullScreen {
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			get => this._isFullScreen;
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			set {
+				if (this._isFullScreen == value) return;
+				SDL.SetWindowFullscreen(this.Handle,
+										value ?
+											(uint)(SystemInfo.IsUnixoid ?
+													   SDL.WindowFlag.FullscreenDesktop :
+													   SDL.WindowFlag.Fullscreen) :
+											0U);
+				this._isFullScreen = value;
+			}
+		}
 
-    public uint Width {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get {
-            int value;
-            SDL.GetWindowSize(_handle, &value, null);
-            return (uint) value;
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set {
-            int currentW;
-            int currentH;
-            SDL.GetWindowSize(_handle, &currentW, &currentH);
+		public uint Width {
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			get {
+				int value;
+				SDL.GetWindowSize(this.Handle, &value, null);
+				return (uint)value;
+			}
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			set {
+				int currentW;
+				int currentH;
+				SDL.GetWindowSize(this.Handle, &currentW, &currentH);
 
-            if (currentW != value) SDL.SetWindowSize(_handle, (int) value, currentH);
-        }
-    }
+				if (currentW != value) SDL.SetWindowSize(this.Handle, (int)value, currentH);
+			}
+		}
 
-    public uint Height {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get {
-            int value;
-            SDL.GetWindowSize(_handle, null, &value);
-            return (uint) value;
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set {
-            int currentW;
-            int currentH;
-            SDL.GetWindowSize(_handle, &currentW, &currentH);
+		public uint Height {
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			get {
+				int value;
+				SDL.GetWindowSize(this.Handle, null, &value);
+				return (uint)value;
+			}
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			set {
+				int currentW;
+				int currentH;
+				SDL.GetWindowSize(this.Handle, &currentW, &currentH);
 
-            if (currentH != value) SDL.SetWindowSize(_handle, currentW, (int) value);
-        }
-    }
+				if (currentH != value) SDL.SetWindowSize(this.Handle, currentW, (int)value);
+			}
+		}
 
-    public int X {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get {
-            int value;
-            SDL.GetWindowPosition(_handle, &value, null);
-            return value;
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set {
-            int currentX;
-            int currentY;
-            SDL.GetWindowPosition(_handle, &currentX, &currentY);
+		public int X {
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			get {
+				int value;
+				SDL.GetWindowPosition(this.Handle, &value, null);
+				return value;
+			}
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			set {
+				int currentX;
+				int currentY;
+				SDL.GetWindowPosition(this.Handle, &currentX, &currentY);
 
-            if (currentX != value) SDL.SetWindowPosition(_handle, value, currentY);
-        }
-    }
+				if (currentX != value) SDL.SetWindowPosition(this.Handle, value, currentY);
+			}
+		}
 
-    public int Y {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get {
-            int value;
-            SDL.GetWindowPosition(_handle, null, &value);
-            return value;
-        }
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set {
-            int currentX;
-            int currentY;
-            SDL.GetWindowPosition(_handle, &currentX, &currentY);
+		public int Y {
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			get {
+				int value;
+				SDL.GetWindowPosition(this.Handle, null, &value);
+				return value;
+			}
+			[MethodImpl(methodImplOptions: MethodImplOptions.AggressiveInlining)]
+			set {
+				int currentX;
+				int currentY;
+				SDL.GetWindowPosition(this.Handle, &currentX, &currentY);
 
-            if (currentY != value) SDL.SetWindowPosition(_handle, currentX, value);
-        }
-    }
+				if (currentY != value) SDL.SetWindowPosition(this.Handle, currentX, value);
+			}
+		}
 
-    public SDL.Window Handle => _handle;
-    public SDL.WmInfo WmInfo => _wmInfo;
+		public SDL.Window Handle { get; }
 
-    #endregion
+		public SDL.WmInfo WmInfo => this._wmInfo;
+		#endregion
+	}
 }
