@@ -3,6 +3,9 @@ namespace Stardust.Client {
 		public static void Run(in Dictionary<string, string> args) {
 			Console.WriteLine(value: "client detected");
 			foreach (var pair in args) Console.WriteLine(value: $"key: {pair.Key} ; value: {pair.Value}");
+
+			var window = new Window("Stardust Example", 1600, 900, false, false);
+			window.Run();
 		}
 	}
 }
