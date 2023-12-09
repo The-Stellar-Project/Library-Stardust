@@ -1,3 +1,5 @@
+using Stardust.Client.Render;
+
 namespace Stardust.Client {
 	public class StardustClient {
 		public static void Run(in Dictionary<string, string> args) {
@@ -10,6 +12,8 @@ namespace Stardust.Client {
 									fullScreen: false,
 									allowHighDpi: false);
 			window.Run();
+
+			var renderContext = new RenderContext(window);
 		}
 	}
 }
