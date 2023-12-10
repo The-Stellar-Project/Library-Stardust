@@ -21,9 +21,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Karma.CoreGPU" Version="1.4.12"/>
-        <PackageReference Include="Karma.MediaCore" Version="1.4.5"/>
+        <PackageReference Include="Karma.Kommons" Version="1.4.2"/>
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0"/>
+        <PackageReference Include="Silk.NET" Version="2.19.0"/>
+        <PackageReference Include="Silk.NET.Input.Sdl" Version="2.19.0"/>
+        <PackageReference Include="Silk.NET.OpenAL" Version="2.19.0"/>
+        <PackageReference Include="Silk.NET.SDL" Version="2.19.0"/>
+        <PackageReference Include="Silk.NET.WebGPU" Version="2.19.0"/>
+        <PackageReference Include="Silk.NET.WebGPU.Extensions.WGPU" Version="2.19.0"/>
+        <PackageReference Include="Silk.NET.WebGPU.Native.WGPU" Version="2.19.0"/>
+        <PackageReference Include="Silk.NET.Windowing.Sdl" Version="2.19.0"/>
     </ItemGroup>
 
 </Project>

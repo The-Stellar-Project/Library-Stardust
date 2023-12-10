@@ -1,12 +1,11 @@
-using Karma.CoreGPU;
-using Karma.CoreInvoke;
+using Silk.NET.WebGPU;
 
 using Stardust.Client.Render.Util;
 
 namespace Stardust.Client.Render {
 	public unsafe class Renderer {
 		private readonly RenderContext       _context;
-		private readonly WGPU.RenderPipeline _renderPipeline;
+		private readonly RenderPipeline _renderPipeline;
 
 		public Renderer(RenderContext context) {
 			this._context = context;
@@ -19,42 +18,46 @@ namespace Stardust.Client.Render {
 		}
 
 		public void Render() {
-			var view = WGPU.SwapChainGetCurrentTextureView(this._context.SwapChain);
+			SurfaceTexture* surfaceTexture;
+			var view = WebGPU.GetApi().SurfaceGetCurrentTexture(this._context.Surface, surfaceTexture);
 
-			WGPU.CommandEncoderDescriptor commandEncoderDescriptor;
+			CommandEncoderDescriptor commandEncoderDescriptor;
 			commandEncoderDescriptor.Label = CString.Zero;
-			var commandEncoder = WGPU.DeviceCreateCommandEncoder(this._context.Device, &commandEncoderDescriptor);
-			if (commandEncoder == WGPU.CommandEncoder.Zero)
+			CommandEncoder* commandEncoder = null;
+			commandEncoder = WebGPU.GetApi().DeviceCreateCommandEncoder(this._context.Device, &commandEncoderDescriptor);
+			if (commandEncoder == null)
 				throw new Exception(message: "DeviceCreateCommandEncoder failed");
 
-			WGPU.Color clearColor;
+			Color clearColor;
 			clearColor.R = 1.0;
 			clearColor.G = 0.0;
 			clearColor.B = 0.0;
 			clearColor.A = 1.0;
 
-			WGPU.RenderPassColorAttachment attachment;
+			RenderPassColorAttachment attachment;
 			attachment.View       = view;
-			attachment.LoadOp     = WGPU.LoadOp.Clear;
-			attachment.StoreOp    = WGPU.StoreOp.Store;
-			attachment.ClearColor = clearColor;
+			attachment.LoadOp     = LoadOp.Clear;
+			attachment.StoreOp    = StoreOp.Store;
+			attachment.ClearValue = clearColor;
 
-			WGPU.RenderPassDescriptor renderPassDescriptor;
+			RenderPassDescriptor renderPassDescriptor;
 			renderPassDescriptor.ColorAttachmentCount = 1;
 			renderPassDescriptor.ColorAttachments     = &attachment;
 
-			var renderEncoder = WGPU.CommandEncoderBeginRenderPass(commandEncoder, &renderPassDescriptor);
-			WGPU.RenderPassEncoderSetPipeline(renderEncoder, this._renderPipeline);
-			WGPU.RenderPassEncoderEndPass(renderEncoder);
+			var renderEncoder = WebGPU.GetApi().CommandEncoderBeginRenderPass(commandEncoder, &renderPassDescriptor);
+			fixed (RenderPipeline* renderPipeline = &this._renderPipeline) {
+				WebGPU.GetApi().RenderPassEncoderSetPipeline(renderEncoder, renderPipeline);
+			}
+			WebGPU.GetApi().RenderPassEncoderEnd(renderEncoder);
 
-			WGPU.CommandBufferDescriptor commandBufferDescriptor;
+			CommandBufferDescriptor commandBufferDescriptor;
 			commandBufferDescriptor.Label = CString.Zero;
-			var commandBuffer = WGPU.CommandEncoderFinish(commandEncoder, &commandBufferDescriptor);
-			if (commandBuffer == WGPU.CommandBuffer.Zero) throw new Exception(message: "CommandEncoderFinish failed");
-
-			WGPU.QueueSubmit(this._context.DeviceQueue, 1, &commandBuffer);
-
-			WGPU.SwapChainPresent(this._context.SwapChain);
+			CommandBuffer* commandBuffer = null;
+			commandBuffer = WebGPU.GetApi().CommandEncoderFinish(commandEncoder, &commandBufferDescriptor);
+			if (commandBuffer == null) throw new Exception(message: "CommandEncoderFinish failed");
+			
+			WebGPU.GetApi().QueueSubmit(this._context.DeviceQueue, 1, &commandBuffer);
+			WebGPU.GetApi().SurfacePresent(this._context.Surface);
 		}
 	}
 }

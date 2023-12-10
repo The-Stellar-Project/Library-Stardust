@@ -1,7 +1,3 @@
-using Karma.CoreInvoke;
-
-using Microsoft.Extensions.Logging;
-
 using Stardust.Client.Render;
 
 namespace Stardust.Client {
@@ -11,16 +7,14 @@ namespace Stardust.Client {
 		public static void Run(in Dictionary<string, string> args) {
 			Console.WriteLine(value: "client detected");
 
-			NativeLibrary.LoggerFactory = LoggerFactory.Create(configure: builder => builder.AddConsole());
-
 			foreach (var pair in args) Console.WriteLine(value: $"key: {pair.Key} ; value: {pair.Value}");
 
-			var window = new Window(title: "Stardust Example",
-									width: 1600,
-									height: 900,
-									fullScreen: false,
-									allowHighDpi: false);
-			var renderContext = new RenderContext(window: window);
+			var window = new StardustWindow(title: "Stardust Example",
+											width: 1600,
+											height: 900,
+											fullScreen: false,
+											allowHighDpi: false);
+			var renderContext = new RenderContext(stardustWindow: window);
 			var renderer      = new Renderer(context: renderContext);
 
 			window.Run(function: () => renderer.Render());
