@@ -13,11 +13,11 @@ namespace Stardust {
 										new KeyValuePair<string, string>(key: arg, value: args[index + 1]))
 							.ToDictionary(keySelector: kvp => kvp.Key, elementSelector: kvp => kvp.Value);
 
-			string dir = pairs[key: "-dir"];
-			if (!string.IsNullOrEmpty(value: dir)) {
+			if (!pairs.TryAdd("-dir", "")) {
+				string dir = pairs[key: "-dir"];
 				Console.WriteLine(value: dir);
 				Directory.SetCurrentDirectory(path: dir);
-			}
+			} else pairs.Remove("-dir");
 
 			if (pairs[key: "-env"].Equals(value: "server"))
 				StardustServer.Run(args: pairs
