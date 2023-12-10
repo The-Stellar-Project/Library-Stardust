@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
-cd "$(dirname "$(readlink -fn "$0")")"
+cd "$(dirname "$(readlink -fn "$0")")" || exit
 dotnet build
-dotnet ./bin/Debug/net8.0/Library-Stardust.dll $@
+cd "$(dirname "$(readlink -fn "$0")")/bin/Debug/net8.0/" || exit
+dotnet ./Library-Stardust.dll "$@" -dir "$(dirname "$(readlink -fn "$0")")"

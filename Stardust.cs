@@ -13,6 +13,12 @@ namespace Stardust {
 										new KeyValuePair<string, string>(key: arg, value: args[index + 1]))
 							.ToDictionary(keySelector: kvp => kvp.Key, elementSelector: kvp => kvp.Value);
 
+			string dir = pairs[key: "-dir"];
+			if (!string.IsNullOrEmpty(value: dir)) {
+				Console.WriteLine(value: dir);
+				Directory.SetCurrentDirectory(path: dir);
+			}
+
 			if (pairs[key: "-env"].Equals(value: "server"))
 				StardustServer.Run(args: pairs
 										 .Where(predicate: pair => AllowedServerArgs.Any(predicate: pairS =>
