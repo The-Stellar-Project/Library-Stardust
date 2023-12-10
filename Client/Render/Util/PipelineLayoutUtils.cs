@@ -24,7 +24,7 @@ namespace Stardust.Client.Render.Util {
 
 		public static PipelineLayout* CreateEmpty(Device device) {
 			PipelineLayoutDescriptor descriptor;
-			return WebGPU.GetApi().DeviceCreatePipelineLayout(&device, &descriptor);
+			return WebGPU.GetApi().DeviceCreatePipelineLayout(device: &device, descriptor: &descriptor);
 		}
 	}
 }

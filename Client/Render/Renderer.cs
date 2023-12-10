@@ -4,7 +4,7 @@ using Stardust.Client.Render.Util;
 
 namespace Stardust.Client.Render {
 	public unsafe class Renderer {
-		private readonly RenderContext       _context;
+		private readonly RenderContext  _context;
 		private readonly RenderPipeline _renderPipeline;
 
 		public Renderer(RenderContext context) {
@@ -18,15 +18,23 @@ namespace Stardust.Client.Render {
 		}
 
 		public void Render() {
-			SurfaceTexture* surfaceTexture;
-			var view = WebGPU.GetApi().SurfaceGetCurrentTexture(this._context.Surface, surfaceTexture);
+			var surfaceTexture = new SurfaceTexture();
+			fixed (Surface* surface = &this._context.Surface)
+				WebGPU.GetApi().SurfaceGetCurrentTexture(surface: surface, surfaceTexture: &surfaceTexture);
+
+			TextureViewDescriptor textureViewDescriptor;
+			// textureViewDescriptor.Label = CString.Zero; TODO: ...
+			var textureView = WebGPU.GetApi()
+									.TextureCreateView(texture: surfaceTexture.Texture,
+													   descriptor: &textureViewDescriptor);
 
 			CommandEncoderDescriptor commandEncoderDescriptor;
-			commandEncoderDescriptor.Label = CString.Zero;
+			// commandEncoderDescriptor.Label = CString.Zero; TODO: ...
 			CommandEncoder* commandEncoder = null;
-			commandEncoder = WebGPU.GetApi().DeviceCreateCommandEncoder(this._context.Device, &commandEncoderDescriptor);
-			if (commandEncoder == null)
-				throw new Exception(message: "DeviceCreateCommandEncoder failed");
+			fixed (Device* device = &this._context.Device)
+				commandEncoder =
+					WebGPU.GetApi().DeviceCreateCommandEncoder(device: device, descriptor: &commandEncoderDescriptor);
+			if (commandEncoder == null) throw new Exception(message: "DeviceCreateCommandEncoder failed");
 
 			Color clearColor;
 			clearColor.R = 1.0;
@@ -35,7 +43,7 @@ namespace Stardust.Client.Render {
 			clearColor.A = 1.0;
 
 			RenderPassColorAttachment attachment;
-			attachment.View       = view;
+			attachment.View       = textureView;
 			attachment.LoadOp     = LoadOp.Clear;
 			attachment.StoreOp    = StoreOp.Store;
 			attachment.ClearValue = clearColor;
@@ -44,20 +52,26 @@ namespace Stardust.Client.Render {
 			renderPassDescriptor.ColorAttachmentCount = 1;
 			renderPassDescriptor.ColorAttachments     = &attachment;
 
-			var renderEncoder = WebGPU.GetApi().CommandEncoderBeginRenderPass(commandEncoder, &renderPassDescriptor);
-			fixed (RenderPipeline* renderPipeline = &this._renderPipeline) {
-				WebGPU.GetApi().RenderPassEncoderSetPipeline(renderEncoder, renderPipeline);
-			}
-			WebGPU.GetApi().RenderPassEncoderEnd(renderEncoder);
+			var renderEncoder = WebGPU.GetApi()
+									  .CommandEncoderBeginRenderPass(commandEncoder: commandEncoder,
+																	 descriptor: &renderPassDescriptor);
+			fixed (RenderPipeline* renderPipeline = &this._renderPipeline)
+				WebGPU.GetApi()
+					  .RenderPassEncoderSetPipeline(renderPassEncoder: renderEncoder, pipeline: renderPipeline);
+
+			WebGPU.GetApi().RenderPassEncoderEnd(renderPassEncoder: renderEncoder);
 
 			CommandBufferDescriptor commandBufferDescriptor;
-			commandBufferDescriptor.Label = CString.Zero;
+			// commandBufferDescriptor.Label = CString.Zero; TODO: ...
 			CommandBuffer* commandBuffer = null;
-			commandBuffer = WebGPU.GetApi().CommandEncoderFinish(commandEncoder, &commandBufferDescriptor);
+			commandBuffer = WebGPU.GetApi()
+								  .CommandEncoderFinish(commandEncoder: commandEncoder,
+														descriptor: &commandBufferDescriptor);
 			if (commandBuffer == null) throw new Exception(message: "CommandEncoderFinish failed");
-			
-			WebGPU.GetApi().QueueSubmit(this._context.DeviceQueue, 1, &commandBuffer);
-			WebGPU.GetApi().SurfacePresent(this._context.Surface);
+
+			fixed (Queue* deviceQueue = &this._context.DeviceQueue)
+				WebGPU.GetApi().QueueSubmit(queue: deviceQueue, commandCount: 1, commands: &commandBuffer);
+			fixed (Surface* surface = &this._context.Surface) WebGPU.GetApi().SurfacePresent(surface: surface);
 		}
 	}
 }

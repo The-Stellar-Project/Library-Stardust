@@ -18,7 +18,7 @@ namespace Stardust.Client.Render.Util {
 			ShaderModuleDescriptor descriptor;
 			descriptor.NextInChain = (ChainedStruct*)&wgslModule;
 
-			var createdModule = WebGPU.GetApi().DeviceCreateShaderModule(&device, &descriptor);
+			var createdModule = WebGPU.GetApi().DeviceCreateShaderModule(device: &device, descriptor: &descriptor);
 
 			// if (createdModule == ShaderModule.Zero) throw new Exception(message: "Failed to create shader module"); TODO: ...
 

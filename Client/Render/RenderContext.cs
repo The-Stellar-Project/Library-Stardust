@@ -13,8 +13,9 @@ namespace Stardust.Client.Render {
 		private          Adapter           _adapter;
 		private          SupportedLimits   _adapterLimits;
 		private          AdapterProperties _adapterProperties;
-		public           Device            _device;
-		private          Surface           _surface;
+		public           Device            Device;
+		public           Queue             DeviceQueue;
+		public           Surface           Surface;
 
 		public RenderContext(StardustWindow stardustWindow) {
 			Console.WriteLine(value: "Creating render context...");
@@ -25,19 +26,11 @@ namespace Stardust.Client.Render {
 			this.CreateAdapter();
 			this.CreateDevice();
 
-			fixed (Device* device = &this._device)
+			fixed (Device* device = &this.Device)
 				WebGPU.GetApi()
 					  .DeviceSetUncapturedErrorCallback(device: device,
 														callback: PfnErrorCallback.From(proc: UncapturedErrorCallback),
 														userdata: null);
-		}
-
-		public Device Device      => this._device;
-		public Queue  DeviceQueue { get; private set; }
-
-		public Surface Surface {
-			get => this._surface;
-			private set => this._surface = value;
 		}
 
 		public void Dispose() {
@@ -45,7 +38,7 @@ namespace Stardust.Client.Render {
 			   WGPU.DevicePoll(this._device, true);
 			   WGPU.DeviceDrop(this._device);
 			 */
-			fixed (Device* device = &this._device) {
+			fixed (Device* device = &this.Device) {
 				WebGPU.GetApi().DeviceRelease(device: device);
 				WebGPU.GetApi().DeviceDestroy(device: device);
 			}
@@ -125,12 +118,12 @@ namespace Stardust.Client.Render {
 			surfaceConfiguration.Height      = stardustWindow.Height;
 			surfaceConfiguration.PresentMode = PresentMode.Immediate;
 
-			fixed (Surface* surface = &this._surface)
+			fixed (Surface* surface = &this.Surface)
 				WebGPU.GetApi().SurfaceConfigure(surface: surface, config: &surfaceConfiguration);
 		}
 
 		private void CreateDevice() {
-			fixed (Device* device = &this._device) {
+			fixed (Device* device = &this.Device) {
 				RequiredLimits requiredLimits;
 				requiredLimits.Limits.MaxBindGroups = 1;
 
@@ -147,7 +140,7 @@ namespace Stardust.Client.Render {
 
 			// if (this._device == WGPU.Device.Zero) throw new Exception(message: "AdapterRequestDevice failed"); TODO: ...
 
-			fixed (Device* device = &this._device) this.DeviceQueue = *WebGPU.GetApi().DeviceGetQueue(device: device);
+			fixed (Device* device = &this.Device) this.DeviceQueue = *WebGPU.GetApi().DeviceGetQueue(device: device);
 		}
 
 		private static void RequestAdapterCallback(
